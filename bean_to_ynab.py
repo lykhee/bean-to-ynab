@@ -57,10 +57,8 @@ def get_beancount_balance(entries, options, ynab_account):
     if bean_account:
         if bean_exclude:
             query = f'SELECT value(sum(position)) WHERE account ~ {bean_account} AND account != {bean_exclude};'
-            print("exclude")
         else:
             query = f'SELECT value(sum(position)) WHERE account ~ {bean_account};'
-            print("include")
         bean_balance = beancount.query.query.run_query(entries, options, query, numberify=True)[1][0][0]
     else:
         raise Exception('bean-to-ynab not found.')
@@ -113,7 +111,7 @@ def main():
     else:
         bean_balance = get_beancount_balance(entries, options, ynab_account)
         difference = bean_balance - ynab_account.balance
-        # create_transaction(args.ynab_token, budget_id, args.account_id, difference)
+        create_transaction(args.ynab_token, budget_id, args.account_id, difference)
 
 
 if __name__ == '__main__':
