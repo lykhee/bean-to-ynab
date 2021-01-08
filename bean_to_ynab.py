@@ -36,26 +36,34 @@ def get_ynab_account(token, budget_id, account_id):
 
 
 def get_mapping(ynab_account):
-    mapping = {}
+    mapping = {
+        'bean-to-ynab': None,
+        'bean-x': None
+    }
     if ynab_account.note is None:
         raise Exception('No mapping found.')
     else:
         for line in ynab_account.note.splitlines():
-            k, v = line.split(': ')
-            mapping[k] = v
+            if ':' in line:
+                k, v = line.split(': ')
+                mapping[k] = v
     return mapping
 
 
 def get_beancount_balance(entries, options, ynab_account):
     mapping = get_mapping(ynab_account)
-    if mapping['bean-to-ynab'] == 'true':
-        bean_account = mapping['bean']
-        bean_exclude = mapping['bean-x']
+    bean_account = mapping['bean-to-ynab']
+    bean_exclude = mapping['bean-x']
+    if bean_account:
         if bean_exclude:
             query = f'SELECT value(sum(position)) WHERE account ~ {bean_account} AND account != {bean_exclude};'
+            print("exclude")
         else:
             query = f'SELECT value(sum(position)) WHERE account ~ {bean_account};'
-    bean_balance = beancount.query.query.run_query(entries, options, query, numberify=True)[1][0][0]
+            print("include")
+        bean_balance = beancount.query.query.run_query(entries, options, query, numberify=True)[1][0][0]
+    else:
+        raise Exception('bean-to-ynab not found.')
     return int(Decimal(bean_balance * 1000))
 
 
@@ -105,7 +113,7 @@ def main():
     else:
         bean_balance = get_beancount_balance(entries, options, ynab_account)
         difference = bean_balance - ynab_account.balance
-        create_transaction(args.ynab_token, budget_id, args.account_id, difference)
+        # create_transaction(args.ynab_token, budget_id, args.account_id, difference)
 
 
 if __name__ == '__main__':
